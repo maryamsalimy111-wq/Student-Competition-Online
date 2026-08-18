@@ -1,31 +1,77 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>رقابت دانش‌آموزی آنلاین</title>
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>رقابت دانش‌آموزی</title>
 <style>
-body{margin:0;background:#0f172a;color:white;font-family:Tahoma,Arial}.wrap{max-width:620px;margin:auto;padding:18px}.card{background:#1e293b;padding:20px;border-radius:22px;box-shadow:0 12px 35px #0005}input,select,button{width:100%;padding:14px;margin:6px 0;border:0;border-radius:12px;font:inherit}button{background:#2563eb;color:#fff;font-weight:bold}.secondary{background:#475569}.hidden{display:none}.players div{padding:9px;background:#334155;border-radius:10px;margin:5px 0}.opt{background:white;color:#111;text-align:right}.sel{outline:4px solid #60a5fa}.rank{display:flex;justify-content:space-between;padding:12px;background:#334155;border-radius:10px;margin:5px 0}.code{font-size:30px;letter-spacing:5px;text-align:center;background:#0f172a;padding:12px;border-radius:12px}.q{font-size:24px;line-height:1.8;margin:18px 0}.muted{opacity:.7}
-</style></head><body><div class="wrap"><div id="home" class="card">
-<h1>🏆 رقابت دانش‌آموزی آنلاین</h1><p class="muted">یک اتاق بساز یا با کد وارد شو.</p>
-<input id="name" placeholder="نام شما">
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial;background:linear-gradient(135deg,#101827,#243b73);color:#fff;min-height:100vh}
+.wrap{max-width:560px;margin:auto;padding:18px}.card{background:#172554;border-radius:25px;padding:22px;box-shadow:0 15px 45px #0005}
+h1{font-size:29px;margin:5px 0 10px}.sub{opacity:.75}.center{text-align:center}.cup{font-size:55px}
+input,select,button{width:100%;padding:14px;border:0;border-radius:14px;margin:6px 0;font:inherit}input,select{background:#fff;color:#111}button{background:#2563eb;color:#fff;font-weight:bold}.gray{background:#475569}
+.hidden{display:none}.code{font-size:35px;letter-spacing:7px;text-align:center;background:#0f172a;padding:15px;border-radius:14px;color:#facc15}
+.player{display:flex;justify-content:space-between;padding:11px;background:#24304d;border-radius:12px;margin:6px 0}.q{font-size:24px;line-height:1.7;margin:18px 0}.opt{background:#fff;color:#111;text-align:right}.chosen{outline:4px solid #60a5fa}.rank{display:flex;justify-content:space-between;padding:13px;background:#24304d;border-radius:12px;margin:6px 0}
+.note{font-size:13px;opacity:.65;line-height:1.7}
+</style>
+</head>
+<body><div class="wrap">
+
+<div id="home" class="card">
+<div class="center"><div class="cup">🏆</div><h1>رقابت دانش‌آموزی</h1><p class="sub">مثل نسخه قبلی، ساده و مناسب گوشی</p></div>
+<input id="name" placeholder="نام دانش‌آموز">
 <select id="subject"><option>ریاضی</option><option>علوم</option><option>فارسی</option><option>اطلاعات عمومی</option></select>
-<button onclick="create()">ساخت اتاق مسابقه</button><hr>
-<input id="code" placeholder="کد اتاق"><button class="secondary" onclick="join()">ورود به اتاق</button>
+<button onclick="makeRoom()">ساخت مسابقه آنلاین</button>
+<hr>
+<input id="joinCode" placeholder="کد مسابقه">
+<button class="gray" onclick="joinRoom()">ورود با کد</button>
+<p id="msg" class="note"></p>
 </div>
-<div id="room" class="card hidden"><h2>اتاق مسابقه</h2><div id="codeView" class="code"></div><p>این کد را برای دانش‌آموزها بفرست.</p><div id="players" class="players"></div><button id="start" onclick="start()">شروع مسابقه</button></div>
-<div id="game" class="card hidden"><p id="progress"></p><div id="q" class="q"></div><div id="opts"></div><p id="wait" class="muted"></p></div>
-<div id="finish" class="card hidden"><h1>🏆 نتایج</h1><div id="ranking"></div><button onclick="location.reload()">مسابقه جدید</button></div>
+
+<div id="room" class="card hidden">
+<h2>اتاق مسابقه</h2><div id="code" class="code"></div>
+<p>کد بالا را برای دوستانت بفرست.</p>
+<div id="players"></div>
+<button id="start" onclick="start()">شروع مسابقه 🚀</button>
 </div>
-<script src="/socket.io/socket.io.js"></script><script>
-const s=io();let room="",host=false,chosen=null;
-const $=x=>document.getElementById(x);function view(x){["home","room","game","finish"].forEach(y=>$(y).classList.toggle("hidden",y!==x))}
-function create(){host=true;s.emit("createRoom",{name:$("name").value,subject:$("subject").value},r=>{if(!r.ok)return alert(r.error);room=r.code;view("room");$("codeView").textContent=room})}
-function join(){host=false;room=$("code").value.trim().toUpperCase();s.emit("joinRoom",{code:room,name:$("name").value},r=>{if(!r.ok)return alert(r.error);view("room");$("codeView").textContent=room})}
-function start(){s.emit("start",{code:room})}
-s.on("state",r=>{
- $("codeView").textContent=r.code;
- $("players").innerHTML=r.players.sort((a,b)=>b.score-a.score).map(p=>`<div>${p.name} — ${p.score} امتیاز ${p.answered?"✓":""}</div>`).join("");
- if(r.finished){$("ranking").innerHTML=r.players.sort((a,b)=>b.score-a.score).map((p,i)=>`<div class="rank"><b>${i+1}. ${p.name}</b><b>${p.score}</b></div>`).join("");view("finish");return}
- if(r.started){view("game");$("progress").textContent=`سؤال ${r.qi+1} از ${r.total}`;$("q").textContent=r.question;chosen=null;
- $("opts").innerHTML=r.options.map((o,i)=>`<button class="opt" onclick="ans(${i},this)">${o}</button>`).join("");
- $("wait").textContent=r.players.every(p=>p.answered)?"در حال رفتن به سؤال بعدی...":"گزینه‌ات را انتخاب کن."}
- else view("room");
-});
-function ans(i,b){if(chosen!==null)return;chosen=i;b.classList.add("sel");s.emit("answer",{code:room,index:i})}
+
+<div id="game" class="card hidden">
+<div id="counter"></div><div id="q" class="q"></div><div id="opts"></div>
+<button onclick="submit()">ثبت جواب ✓</button>
+<div id="status" class="note"></div>
+</div>
+
+<div id="result" class="card hidden">
+<div class="center"><div class="cup">🏆</div><h1>نتیجه</h1></div>
+<div id="ranking"></div><button onclick="location.reload()">مسابقه جدید</button>
+</div>
+
+</div>
+<script>
+const data={
+"ریاضی":[["۱۲ + ۸ = ؟",["۱۸","۲۰","۲۲","۲۴"],1],["۹ × ۷ = ؟",["۵۶","۶۳","۷۲","۷۹"],1],["۱۰۰ ÷ ۴ = ؟",["۲۰","۲۵","۳۰","۴۰"],1],["۱۵ − ۶ = ؟",["۷","۸","۹","۱۰"],2],["نصف ۵۰ = ؟",["۱۵","۲۰","۲۵","۳۰"],2]],
+"علوم":[["نزدیک‌ترین سیاره به خورشید؟",["زمین","مریخ","عطارد","زهره"],2],["آب در چند درجه می‌جوشد؟",["۵۰","۷۵","۱۰۰","۱۲۰"],2],["گیاهان در فتوسنتز چه گازی مصرف می‌کنند؟",["اکسیژن","دی‌اکسیدکربن","هیدروژن","هلیوم"],1],["کدام اندام خون را پمپاژ می‌کند؟",["مغز","قلب","ریه","کبد"],1]],
+"فارسی":[["مخالف «بزرگ» چیست؟",["بلند","کوچک","سنگین","زیبا"],1],["کدام کلمه اسم است؟",["دویدن","زیبا","کتاب","سریع"],2],["جمع دانش‌آموز؟",["دانش‌آموزان","دانش‌آموزی","دانش","آموز"],0]],
+"اطلاعات عمومی":[["پایتخت ایران؟",["شیراز","تهران","تبریز","اصفهان"],1],["یک هفته چند روز دارد؟",["۵","۶","۷","۸"],2],["خورشید یک ... است.",["سیاره","ستاره","قمر","سیارک"],1]]
+};
+let players=[],host=false,roomCode="",qs=[],qi=0,turn=0,choice=null;
+
+function show(x){["home","room","game","result"].forEach(y=>document.getElementById(y).classList.toggle("hidden",y!==x))}
+function makeCode(){return Math.random().toString(36).slice(2,7).toUpperCase()}
+function makeRoom(){
+let n=document.getElementById("name").value.trim();if(!n)return alert("نامت را وارد کن.");
+host=true;roomCode=makeCode();players=[{name:n,score:0}];document.getElementById("code").textContent=roomCode;renderPlayers();show("room");
+}
+function joinRoom(){
+let n=document.getElementById("name").value.trim(),c=document.getElementById("joinCode").value.trim().toUpperCase();
+if(!n||!c)return alert("نام و کد را وارد کن.");
+roomCode=c;players=[{name:n,score:0}];host=false;document.getElementById("code").textContent=roomCode;renderPlayers();show("room");
+}
+function renderPlayers(){document.getElementById("players").innerHTML=players.map((p,i)=>`<div class="player"><span>${i+1}. ${p.name}</span><b>${p.score}</b></div>`).join("")}
+function start(){
+if(!host)return alert("فقط سازنده اتاق می‌تواند شروع کند.");
+qs=[...data[document.getElementById("subject").value]].sort(()=>Math.random()-.5);qi=0;turn=0;choice=null;show("game");renderQ()
+}
+function renderQ(){let x=qs[qi];document.getElementById("counter").textContent=`سؤال ${qi+1} از ${qs.length}`;document.getElementById("q").textContent=x[0];document.getElementById("status").textContent="گزینه را انتخاب کن.";choice=null;document.getElementById("opts").innerHTML=x[1].map((o,i)=>`<button class="opt" onclick="pick(${i},this)">${o}</button>`).join("")}
+function pick(i,b){choice=i;document.querySelectorAll(".opt").forEach(x=>x.classList.remove("chosen"));b.classList.add("chosen")}
+function submit(){if(choice===null)return alert("اول یک گزینه انتخاب کن.");if(choice===qs[qi][2])players[0].score+=10;qi++;if(qi>=qs.length){finish()}else renderQ()}
+function finish(){players.sort((a,b)=>b.score-a.score);document.getElementById("ranking").innerHTML=players.map((p,i)=>`<div class="rank"><span>${i==0?"🥇":i==1?"🥈":"⭐"} ${p.name}</span><b>${p.score}</b></div>`).join("");show("result")}
 </script></body></html>
