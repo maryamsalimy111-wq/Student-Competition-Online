@@ -1,0 +1,31 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>رقابت دانش‌آموزی آنلاین</title>
+<style>
+body{margin:0;background:#0f172a;color:white;font-family:Tahoma,Arial}.wrap{max-width:620px;margin:auto;padding:18px}.card{background:#1e293b;padding:20px;border-radius:22px;box-shadow:0 12px 35px #0005}input,select,button{width:100%;padding:14px;margin:6px 0;border:0;border-radius:12px;font:inherit}button{background:#2563eb;color:#fff;font-weight:bold}.secondary{background:#475569}.hidden{display:none}.players div{padding:9px;background:#334155;border-radius:10px;margin:5px 0}.opt{background:white;color:#111;text-align:right}.sel{outline:4px solid #60a5fa}.rank{display:flex;justify-content:space-between;padding:12px;background:#334155;border-radius:10px;margin:5px 0}.code{font-size:30px;letter-spacing:5px;text-align:center;background:#0f172a;padding:12px;border-radius:12px}.q{font-size:24px;line-height:1.8;margin:18px 0}.muted{opacity:.7}
+</style></head><body><div class="wrap"><div id="home" class="card">
+<h1>🏆 رقابت دانش‌آموزی آنلاین</h1><p class="muted">یک اتاق بساز یا با کد وارد شو.</p>
+<input id="name" placeholder="نام شما">
+<select id="subject"><option>ریاضی</option><option>علوم</option><option>فارسی</option><option>اطلاعات عمومی</option></select>
+<button onclick="create()">ساخت اتاق مسابقه</button><hr>
+<input id="code" placeholder="کد اتاق"><button class="secondary" onclick="join()">ورود به اتاق</button>
+</div>
+<div id="room" class="card hidden"><h2>اتاق مسابقه</h2><div id="codeView" class="code"></div><p>این کد را برای دانش‌آموزها بفرست.</p><div id="players" class="players"></div><button id="start" onclick="start()">شروع مسابقه</button></div>
+<div id="game" class="card hidden"><p id="progress"></p><div id="q" class="q"></div><div id="opts"></div><p id="wait" class="muted"></p></div>
+<div id="finish" class="card hidden"><h1>🏆 نتایج</h1><div id="ranking"></div><button onclick="location.reload()">مسابقه جدید</button></div>
+</div>
+<script src="/socket.io/socket.io.js"></script><script>
+const s=io();let room="",host=false,chosen=null;
+const $=x=>document.getElementById(x);function view(x){["home","room","game","finish"].forEach(y=>$(y).classList.toggle("hidden",y!==x))}
+function create(){host=true;s.emit("createRoom",{name:$("name").value,subject:$("subject").value},r=>{if(!r.ok)return alert(r.error);room=r.code;view("room");$("codeView").textContent=room})}
+function join(){host=false;room=$("code").value.trim().toUpperCase();s.emit("joinRoom",{code:room,name:$("name").value},r=>{if(!r.ok)return alert(r.error);view("room");$("codeView").textContent=room})}
+function start(){s.emit("start",{code:room})}
+s.on("state",r=>{
+ $("codeView").textContent=r.code;
+ $("players").innerHTML=r.players.sort((a,b)=>b.score-a.score).map(p=>`<div>${p.name} — ${p.score} امتیاز ${p.answered?"✓":""}</div>`).join("");
+ if(r.finished){$("ranking").innerHTML=r.players.sort((a,b)=>b.score-a.score).map((p,i)=>`<div class="rank"><b>${i+1}. ${p.name}</b><b>${p.score}</b></div>`).join("");view("finish");return}
+ if(r.started){view("game");$("progress").textContent=`سؤال ${r.qi+1} از ${r.total}`;$("q").textContent=r.question;chosen=null;
+ $("opts").innerHTML=r.options.map((o,i)=>`<button class="opt" onclick="ans(${i},this)">${o}</button>`).join("");
+ $("wait").textContent=r.players.every(p=>p.answered)?"در حال رفتن به سؤال بعدی...":"گزینه‌ات را انتخاب کن."}
+ else view("room");
+});
+function ans(i,b){if(chosen!==null)return;chosen=i;b.classList.add("sel");s.emit("answer",{code:room,index:i})}
+</script></body></html>
